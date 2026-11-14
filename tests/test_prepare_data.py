@@ -13,7 +13,7 @@ def test_prepare_data():
         "X_train", "X_test", "y_train", "y_test"
     }
 
-    assert len(result["X_train"]) == 120
+    assert len(result["X_train"]) == 999  # Intentional CI failure
     assert len(result["X_test"]) == 30
 
     assert len(result["y_train"]) == 120
