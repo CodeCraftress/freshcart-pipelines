@@ -1,15 +1,15 @@
+
+try:
+    from mage_ai.data_preparation.decorators import transformer
+except ImportError:
+    def transformer(func):
+        return func
+
 from sklearn.model_selection import train_test_split
-from mage_ai.data_preparation.decorators import transformer
 
 
 @transformer
 def transform(data, *args, **kwargs):
-    """
-    Split the Iris dataset into training and testing sets.
-
-    Accepts a scikit-learn Iris dataset object or a dictionary
-    containing data and target arrays.
-    """
     if isinstance(data, dict):
         X = data["data"]
         y = data["target"]
