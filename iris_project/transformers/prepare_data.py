@@ -1,4 +1,3 @@
-
 try:
     from mage_ai.data_preparation.decorators import transformer
 except ImportError:
