@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mage for ML Pipelines</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --paper: #ffffff;
+    --ink: #1d2433;
+    --muted: #5b6475;
+    --line: #e2ddd2;
+    --loader: #2f6fdf;
+    --transformer: #8b4fd6;
+    --exporter: #d9822b;
+    --test: #2a9d6a;
+    --code-bg: #1e2230;
+    --code-ink: #e6e9f0;
+    --accent: #c4432b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    line-height: 1.6; font-size: 16px;
+  }
+  header {
+    background: var(--ink); color: #fff; padding: 48px 16px 40px;
+  }
+  header .wrap { max-width: 960px; margin: 0 auto; }
+  header .kicker { letter-spacing: .14em; text-transform: uppercase; font-size: 13px; color: #f0b45a; }
+  header h1 { font-size: clamp(28px, 5vw, 44px); margin: 8px 0 12px; line-height: 1.15; }
+  header p { color: #c9cfdb; max-width: 680px; margin: 0; }
+  nav {
+    position: sticky; top: 0; z-index: 10; background: var(--paper);
+    border-bottom: 1px solid var(--line); overflow-x: auto; white-space: nowrap;
+  }
+  nav .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  nav a {
+    display: inline-block; padding: 12px 10px; color: var(--muted);
+    text-decoration: none; font-size: 14px; font-weight: 600;
+  }
+  nav a:hover { color: var(--accent); }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+  section { margin-top: 48px; }
+  h2 { font-size: 26px; margin: 0 0 6px; }
+  h2 .num { color: var(--accent); font-weight: 800; margin-right: 8px; }
+  h3 { margin: 24px 0 8px; font-size: 19px; }
+  .lead { color: var(--muted); margin-top: 0; }
+  .card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; margin: 16px 0;
+  }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .chip {
+    display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px;
+    border-radius: 999px; color: #fff; letter-spacing: .03em;
+  }
+  .c-loader { background: var(--loader); }
+  .c-transformer { background: var(--transformer); }
+  .c-exporter { background: var(--exporter); }
+  .c-test { background: var(--test); }
+  .btype { border-top: 5px solid; }
+  .btype.loader { border-color: var(--loader); }
+  .btype.transformer { border-color: var(--transformer); }
+  .btype.exporter { border-color: var(--exporter); }
+  .btype.test { border-color: var(--test); }
+  .btype h4 { margin: 8px 0 4px; }
+  .btype p { margin: 0; color: var(--muted); font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f1ede4; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); padding: 16px 18px;
+    border-radius: 10px; overflow-x: auto; font-size: 14px; line-height: 1.55; margin: 10px 0;
+  }
+  code { font-family: "Cascadia Code", Consolas, "Fira Code", monospace; }
+  p code, li code, td code {
+    background: #ece7dc; padding: 1px 6px; border-radius: 5px; font-size: 14px;
+  }
+  .kw { color: #c792ea; } .fn { color: #82aaff; } .str { color: #c3e88d; }
+  .cm { color: #7f8aa3; font-style: italic; } .dec { color: #f0b45a; } .num-l { color: #f78c6c; }
+  .note {
+    border-left: 4px solid var(--accent); background: #fbf0ec; padding: 12px 16px;
+    border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .tip {
+    border-left: 4px solid var(--test); background: #eaf6f0; padding: 12px 16px;
+    border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .block-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .block-head h3 { margin: 0; }
+  .io { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+  .io div { background: #f4f1ea; border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .io b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps li { counter-increment: s; position: relative; padding: 6px 0 6px 42px; }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 6px; width: 28px; height: 28px;
+    border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700;
+    display: grid; place-items: center; font-size: 14px;
+  }
+  /* Simulator */
+  .sim-pipe { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+  .sim-node {
+    flex: 1 1 150px; border: 2px solid var(--line); border-radius: 10px; padding: 10px;
+    text-align: center; font-weight: 600; font-size: 14px; background: #fff; transition: all .3s;
+  }
+  .sim-node small { display: block; font-weight: 400; color: var(--muted); }
+  .sim-node.running { border-color: #f0b45a; background: #fff7e6; transform: scale(1.03); }
+  .sim-node.done { border-color: var(--test); background: #eaf6f0; }
+  .sim-arrow { color: var(--muted); font-size: 20px; }
+  .console {
+    background: #11141c; color: #b8f2c9; font-family: Consolas, monospace; font-size: 13px;
+    border-radius: 10px; padding: 14px; min-height: 140px; white-space: pre-wrap;
+  }
+  button {
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+    padding: 10px 18px; font-weight: 700; font-size: 15px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  details { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 10px 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  svg text { font-family: "Segoe UI", system-ui, sans-serif; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 16px 40px; }
+  @media print { nav { display: none; } pre { white-space: pre-wrap; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Data Engineering for ML · Hands-on Module</div>
+    <h1>Mage: Building an ML Classification Pipeline</h1>
+    <p>Learn how the Mage orchestration tool turns a machine-learning script into a clean, testable, schedulable pipeline — using the classic Iris flower classification problem.</p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#what">1. What is Mage</a>
+    <a href="#concepts">2. Core concepts</a>
+    <a href="#setup">3. Setup</a>
+    <a href="#problem">4. The problem</a>
+    <a href="#blocks">5. Build the pipeline</a>
+    <a href="#flow">6. How data flows</a>
+    <a href="#simulate">7. Simulate a run</a>
+    <a href="#trigger">8. Variables & triggers</a>
+    <a href="#exercises">9. Exercises</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- 1 -->
+<section id="what">
+  <h2><span class="num">1</span>What is Mage?</h2>
+  <p class="lead">Mage is an open-source tool for building, running and scheduling <b>data pipelines</b>. You write small pieces of Python (or SQL) called <b>blocks</b> in a notebook-like web editor, and Mage connects them into a pipeline that can run automatically.</p>
+
+  <div class="card">
+    <h3 style="margin-top:0">Why should an ML student care?</h3>
+    <p>A real ML project is never a single <code>model.fit()</code> line. It is a chain of steps:</p>
+    <p style="text-align:center;font-weight:600">Get data → Clean / split → Train → Evaluate → Save results</p>
+    <p>In a Jupyter notebook these steps are mixed together, run in any order, and hard to repeat. Mage forces each step into its own block, runs them in the right order, checks them with tests, and can re-run the whole thing every night with new data.</p>
+  </div>
+
+  <div class="table-wrap card" style="padding:0">
+    <table>
+      <tr><th>Question</th><th>Jupyter notebook</th><th>Mage pipeline</th></tr>
+      <tr><td>Order of execution</td><td>Whatever order you click cells</td><td>Fixed by the dependency graph (DAG)</td></tr>
+      <tr><td>Passing data between steps</td><td>Global variables</td><td>Return value of one block → input of the next</td></tr>
+      <tr><td>Checking outputs</td><td>Manual <code>print()</code></td><td>Built-in <code>@test</code> functions</td></tr>
+      <tr><td>Running daily / on new data</td><td>Not possible directly</td><td>Triggers (schedule, event, API)</td></tr>
+      <tr><td>Interactive development</td><td>Yes</td><td>Yes — each block can be run on its own with a preview</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="concepts">
+  <h2><span class="num">2</span>Core concepts</h2>
+  <p class="lead">Five words to remember: <b>Project, Pipeline, Block, DAG, Trigger</b>.</p>
+
+  <div class="table-wrap card" style="padding:0">
+    <table>
+      <tr><th>Term</th><th>Meaning</th><th>In our Iris example</th></tr>
+      <tr><td><b>Project</b></td><td>A folder holding all your pipelines, blocks and config</td><td><code>iris_project/</code></td></tr>
+      <tr><td><b>Pipeline</b></td><td>An ordered set of connected blocks</td><td><code>iris_classifier</code></td></tr>
+      <tr><td><b>Block</b></td><td>One Python/SQL file that does one job</td><td>load, prepare, train, save</td></tr>
+      <tr><td><b>DAG</b></td><td>Directed Acyclic Graph — which block runs after which</td><td>load → prepare → train → save</td></tr>
+      <tr><td><b>Trigger</b></td><td>A rule that runs the pipeline automatically</td><td>"Run every day at 6 AM"</td></tr>
+    </table>
+  </div>
+
+  <h3>The main block types</h3>
+  <div class="grid">
+    <div class="card btype loader"><span class="chip c-loader">@data_loader</span><h4>Data Loader</h4><p>Brings data <i>into</i> the pipeline — from a CSV, database, API or library.</p></div>
+    <div class="card btype transformer"><span class="chip c-transformer">@transformer</span><h4>Transformer</h4><p>Changes data — cleaning, feature engineering, splitting, even training a model.</p></div>
+    <div class="card btype exporter"><span class="chip c-exporter">@data_exporter</span><h4>Data Exporter</h4><p>Sends results <i>out</i> — to a file, database or cloud storage.</p></div>
+    <div class="card btype test"><span class="chip c-test">@test</span><h4>Test function</h4><p>Written inside any block. Runs automatically after the block and fails the run if an assertion fails.</p></div>
+  </div>
+  <p style="color:var(--muted);font-size:15px">Mage also has Custom, Sensor, Scratchpad, Chart and dbt blocks — we do not need them for this module.</p>
+</section>
+
+<!-- 3 -->
+<section id="setup">
+  <h2><span class="num">3</span>Setup</h2>
+  <div class="card">
+    <h3 style="margin-top:0">Option A — pip (simplest for a lab)</h3>
+<pre><code><span class="cm"># inside a fresh virtual environment</span>
+pip install mage-ai scikit-learn pandas
+
+<span class="cm"># create and start a project called iris_project</span>
+mage start iris_project</code></pre>
+    <p>Open <b>http://localhost:6789</b> in your browser. The Mage editor appears.</p>
+
+    <h3>Option B — Docker</h3>
+<pre><code>docker run -it -p 6789:6789 -v "$(pwd)":/home/src mageai/mageai \
+  /app/run_app.sh mage start iris_project</code></pre>
+  </div>
+
+  <h3>Create the pipeline in the UI</h3>
+  <ol class="steps">
+    <li>Click <b>Pipelines → New → Standard (batch)</b>. Name it <code>iris_classifier</code>.</li>
+    <li>Click <b>Data loader → Python → Generic (no template)</b>. Name it <code>load_iris</code>.</li>
+    <li>Below that block, add <b>Transformer → Python → Generic</b> named <code>prepare_data</code>. Mage automatically connects it under <code>load_iris</code>.</li>
+    <li>Add another <b>Transformer</b> named <code>train_model</code>.</li>
+    <li>Add a <b>Data exporter → Python → Generic</b> named <code>save_results</code>.</li>
+    <li>Paste the code from Section 5 into each block and press <b>Run</b> (▶) on each, top to bottom.</li>
+  </ol>
+  <div class="tip">The right-hand panel shows the <b>dependency tree</b>. You can drag lines between blocks there to change who depends on whom.</div>
+</section>
+
+<!-- 4 -->
+<section id="problem">
+  <h2><span class="num">4</span>The ML problem: Iris classification</h2>
+  <div class="card">
+    <p style="margin-top:0">Given four flower measurements, predict which of three species the flower belongs to.</p>
+    <div class="table-wrap">
+    <table>
+      <tr><th>sepal length</th><th>sepal width</th><th>petal length</th><th>petal width</th><th>target</th></tr>
+      <tr><td>5.1</td><td>3.5</td><td>1.4</td><td>0.2</td><td>0 (setosa)</td></tr>
+      <tr><td>7.0</td><td>3.2</td><td>4.7</td><td>1.4</td><td>1 (versicolor)</td></tr>
+      <tr><td>6.3</td><td>3.3</td><td>6.0</td><td>2.5</td><td>2 (virginica)</td></tr>
+    </table>
+    </div>
+    <p style="margin-bottom:0">150 rows · 4 numeric features · 3 classes · no missing values. Small and clean, so students can focus on <b>Mage</b>, not on data cleaning.</p>
+  </div>
+
+  <h3>Our pipeline (the DAG)</h3>
+  <div class="card" style="overflow-x:auto">
+    <svg viewBox="0 0 860 170" width="100%" style="min-width:620px" role="img" aria-label="Pipeline DAG: load_iris, prepare_data, train_model, save_results">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#5b6475"/>
+        </marker>
+      </defs>
+      <g>
+        <rect x="10" y="40" width="170" height="80" rx="12" fill="#eaf1fd" stroke="#2f6fdf" stroke-width="2"/>
+        <text x="95" y="72" text-anchor="middle" font-weight="700" fill="#1d2433">load_iris</text>
+        <text x="95" y="94" text-anchor="middle" font-size="13" fill="#2f6fdf">Data Loader</text>
+      </g>
+      <line x1="182" y1="80" x2="228" y2="80" stroke="#5b6475" stroke-width="2" marker-end="url(#arr)"/>
+      <g>
+        <rect x="230" y="40" width="170" height="80" rx="12" fill="#f3ecfc" stroke="#8b4fd6" stroke-width="2"/>
+        <text x="315" y="72" text-anchor="middle" font-weight="700" fill="#1d2433">prepare_data</text>
+        <text x="315" y="94" text-anchor="middle" font-size="13" fill="#8b4fd6">Transformer</text>
+      </g>
+      <line x1="402" y1="80" x2="448" y2="80" stroke="#5b6475" stroke-width="2" marker-end="url(#arr)"/>
+      <g>
+        <rect x="450" y="40" width="170" height="80" rx="12" fill="#f3ecfc" stroke="#8b4fd6" stroke-width="2"/>
+        <text x="535" y="72" text-anchor="middle" font-weight="700" fill="#1d2433">train_model</text>
+        <text x="535" y="94" text-anchor="middle" font-size="13" fill="#8b4fd6">Transformer</text>
+      </g>
+      <line x1="622" y1="80" x2="668" y2="80" stroke="#5b6475" stroke-width="2" marker-end="url(#arr)"/>
+      <g>
+        <rect x="670" y="40" width="170" height="80" rx="12" fill="#fcf1e6" stroke="#d9822b" stroke-width="2"/>
+        <text x="755" y="72" text-anchor="middle" font-weight="700" fill="#1d2433">save_results</text>
+        <text x="755" y="94" text-anchor="middle" font-size="13" fill="#d9822b">Data Exporter</text>
+      </g>
+      <text x="205" y="150" text-anchor="middle" font-size="12" fill="#5b6475">150 rows</text>
+      <text x="425" y="150" text-anchor="middle" font-size="12" fill="#5b6475">+ split column</text>
+      <text x="645" y="150" text-anchor="middle" font-size="12" fill="#5b6475">30 test rows + predicted</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="blocks">
+  <h2><span class="num">5</span>Build the pipeline, block by block</h2>
+  <p class="lead">Every block follows the same pattern: <b>import the decorator → write one function → return a DataFrame → (optionally) test it</b>.</p>
+
+  <!-- Block 1 -->
+  <div class="card">
+    <div class="block-head"><span class="chip c-loader">Data Loader</span><h3>Block 1 · load_iris</h3></div>
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">from</span> sklearn.datasets <span class="kw">import</span> load_iris
+
+<span class="kw">if</span> <span class="str">'data_loader'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> data_loader
+<span class="kw">if</span> <span class="str">'test'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> test
+
+
+<span class="dec">@data_loader</span>
+<span class="kw">def</span> <span class="fn">load_data</span>(*args, **kwargs):
+    iris = load_iris(as_frame=<span class="kw">True</span>)
+    df = iris.frame                      <span class="cm"># 4 feature columns + 'target'</span>
+    print(<span class="str">'Rows loaded:'</span>, len(df))
+    <span class="kw">return</span> df
+
+
+<span class="dec">@test</span>
+<span class="kw">def</span> <span class="fn">test_output</span>(output, *args):
+    <span class="kw">assert</span> output <span class="kw">is not</span> <span class="kw">None</span>, <span class="str">'No data loaded'</span>
+    <span class="kw">assert</span> len(output) == <span class="num-l">150</span>, <span class="str">'Iris must have 150 rows'</span></code></pre>
+    <div class="io">
+      <div><b>Input</b>nothing (it is the first block)</div>
+      <div><b>Output</b>DataFrame, 150 rows × 5 columns</div>
+      <div><b>Test checks</b>data exists and has 150 rows</div>
+    </div>
+    <div class="note">The <code>if '...' not in globals()</code> lines are standard Mage boilerplate — Mage generates them for you. They just make sure the decorator is imported.</div>
+  </div>
+
+  <!-- Block 2 -->
+  <div class="card">
+    <div class="block-head"><span class="chip c-transformer">Transformer</span><h3>Block 2 · prepare_data</h3></div>
+<pre><code><span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">from</span> sklearn.model_selection <span class="kw">import</span> train_test_split
+
+<span class="kw">if</span> <span class="str">'transformer'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> transformer
+<span class="kw">if</span> <span class="str">'test'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> test
+
+
+<span class="dec">@transformer</span>
+<span class="kw">def</span> <span class="fn">transform</span>(df, *args, **kwargs):
+    df = df.dropna()                     <span class="cm"># remove empty rows (safety step)</span>
+
+    train_df, test_df = train_test_split(df, test_size=<span class="num-l">0.2</span>, random_state=<span class="num-l">42</span>)
+
+    train_df = train_df.copy()
+    test_df = test_df.copy()
+    train_df[<span class="str">'split'</span>] = <span class="str">'train'</span>
+    test_df[<span class="str">'split'</span>] = <span class="str">'test'</span>
+
+    result = pd.concat([train_df, test_df])
+    print(<span class="str">'Train rows:'</span>, len(train_df), <span class="str">'| Test rows:'</span>, len(test_df))
+    <span class="kw">return</span> result
+
+
+<span class="dec">@test</span>
+<span class="kw">def</span> <span class="fn">test_output</span>(output, *args):
+    <span class="kw">assert</span> <span class="str">'split'</span> <span class="kw">in</span> output.columns, <span class="str">'split column missing'</span></code></pre>
+    <div class="io">
+      <div><b>Input <code>df</code></b>the output of <code>load_iris</code></div>
+      <div><b>Output</b>same 150 rows + a <code>split</code> column (120 train / 30 test)</div>
+      <div><b>Why one DataFrame?</b>A block returns one object; a label column keeps it simple</div>
+    </div>
+  </div>
+
+  <!-- Block 3 -->
+  <div class="card">
+    <div class="block-head"><span class="chip c-transformer">Transformer</span><h3>Block 3 · train_model</h3></div>
+<pre><code><span class="kw">import</span> joblib
+<span class="kw">from</span> sklearn.tree <span class="kw">import</span> DecisionTreeClassifier
+
+<span class="kw">if</span> <span class="str">'transformer'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> transformer
+<span class="kw">if</span> <span class="str">'test'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> test
+
+FEATURES = [<span class="str">'sepal length (cm)'</span>, <span class="str">'sepal width (cm)'</span>,
+            <span class="str">'petal length (cm)'</span>, <span class="str">'petal width (cm)'</span>]
+
+
+<span class="dec">@transformer</span>
+<span class="kw">def</span> <span class="fn">train</span>(df, *args, **kwargs):
+    max_depth = int(kwargs.get(<span class="str">'max_depth'</span>, <span class="num-l">3</span>))   <span class="cm"># pipeline variable, default 3</span>
+
+    train_df = df[df[<span class="str">'split'</span>] == <span class="str">'train'</span>]
+    test_df = df[df[<span class="str">'split'</span>] == <span class="str">'test'</span>].copy()
+
+    model = DecisionTreeClassifier(max_depth=max_depth, random_state=<span class="num-l">42</span>)
+    model.fit(train_df[FEATURES], train_df[<span class="str">'target'</span>])
+
+    test_df[<span class="str">'predicted'</span>] = model.predict(test_df[FEATURES])
+    accuracy = (test_df[<span class="str">'predicted'</span>] == test_df[<span class="str">'target'</span>]).mean()
+    print(<span class="str">'max_depth ='</span>, max_depth, <span class="str">'| Test accuracy ='</span>, round(accuracy, <span class="num-l">3</span>))
+
+    joblib.dump(model, <span class="str">'iris_model.pkl'</span>)         <span class="cm"># save the trained model</span>
+    <span class="kw">return</span> test_df
+
+
+<span class="dec">@test</span>
+<span class="kw">def</span> <span class="fn">test_accuracy</span>(output, *args):
+    accuracy = (output[<span class="str">'predicted'</span>] == output[<span class="str">'target'</span>]).mean()
+    <span class="kw">assert</span> accuracy &gt;= <span class="num-l">0.8</span>, <span class="str">'Model accuracy is below 80%'</span></code></pre>
+    <div class="io">
+      <div><b>Input <code>df</code></b>output of <code>prepare_data</code></div>
+      <div><b>Output</b>30 test rows with a new <code>predicted</code> column</div>
+      <div><b>Side effect</b>trained model saved as <code>iris_model.pkl</code></div>
+    </div>
+    <div class="tip"><b>Teaching point:</b> the test acts as a <i>quality gate</i>. If someone changes the model and accuracy drops below 80%, the pipeline run is marked failed and <code>save_results</code> never runs — bad results never reach production.</div>
+  </div>
+
+  <!-- Block 4 -->
+  <div class="card">
+    <div class="block-head"><span class="chip c-exporter">Data Exporter</span><h3>Block 4 · save_results</h3></div>
+<pre><code><span class="kw">if</span> <span class="str">'data_exporter'</span> <span class="kw">not in</span> globals():
+    <span class="kw">from</span> mage_ai.data_preparation.decorators <span class="kw">import</span> data_exporter
+
+
+<span class="dec">@data_exporter</span>
+<span class="kw">def</span> <span class="fn">export_data</span>(df, *args, **kwargs):
+    df.to_csv(<span class="str">'iris_predictions.csv'</span>, index=<span class="kw">False</span>)
+    print(<span class="str">'Saved'</span>, len(df), <span class="str">'predictions to iris_predictions.csv'</span>)</code></pre>
+    <div class="io">
+      <div><b>Input <code>df</code></b>output of <code>train_model</code></div>
+      <div><b>Output</b>nothing returned — writes a CSV file</div>
+      <div><b>Where is the file?</b>in the folder where Mage runs (the project root)</div>
+    </div>
+    <p style="margin-bottom:0;color:var(--muted);font-size:15px">In a real project this block would write to PostgreSQL, BigQuery or S3 instead — only this block changes, nothing else in the pipeline.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="flow">
+  <h2><span class="num">6</span>How data flows between blocks</h2>
+  <div class="card">
+    <p style="margin-top:0;font-size:18px;text-align:center"><b>Whatever a block <code>return</code>s becomes the first argument of the next block.</b></p>
+<pre><code><span class="cm"># load_iris</span>       <span class="kw">return</span> df            ──►  <span class="cm"># prepare_data</span>  <span class="kw">def</span> <span class="fn">transform</span>(df, ...)
+<span class="cm"># prepare_data</span>    <span class="kw">return</span> result        ──►  <span class="cm"># train_model</span>   <span class="kw">def</span> <span class="fn">train</span>(df, ...)
+<span class="cm"># train_model</span>     <span class="kw">return</span> test_df       ──►  <span class="cm"># save_results</span>  <span class="kw">def</span> <span class="fn">export_data</span>(df, ...)</code></pre>
+    <ul>
+      <li>Mage <b>saves each block's output</b> to disk. So you can re-run only <code>train_model</code> while experimenting, without reloading data.</li>
+      <li>If a block has <b>two parents</b>, it receives two arguments, in the order of the upstream blocks.</li>
+      <li><code>**kwargs</code> carries pipeline variables and run information (for example, the execution date).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="simulate">
+  <h2><span class="num">7</span>Simulate a pipeline run</h2>
+  <p class="lead">Click <b>Run pipeline</b> to see the order Mage executes blocks and what each one prints. Then try failing the accuracy test.</p>
+  <div class="card">
+    <div class="sim-pipe">
+      <div class="sim-node" id="n0">load_iris<small>Data Loader</small></div><span class="sim-arrow">→</span>
+      <div class="sim-node" id="n1">prepare_data<small>Transformer</small></div><span class="sim-arrow">→</span>
+      <div class="sim-node" id="n2">train_model<small>Transformer</small></div><span class="sim-arrow">→</span>
+      <div class="sim-node" id="n3">save_results<small>Data Exporter</small></div>
+    </div>
+    <p>
+      <label>max_depth variable:
+        <select id="depth">
+          <option value="1">1 (too simple)</option>
+          <option value="2">2</option>
+          <option value="3" selected>3 (default)</option>
+          <option value="5">5</option>
+        </select>
+      </label>
+    </p>
+    <p><button id="runBtn">▶ Run pipeline</button> <button class="ghost" id="resetBtn">Reset</button></p>
+    <div class="console" id="console">Waiting for run…</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="trigger">
+  <h2><span class="num">8</span>Pipeline variables & triggers</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0">Pipeline variables</h3>
+    <p>In the pipeline editor, open the <b>Variables</b> tab on the right and add <code>max_depth = 4</code>. Every block can read it with <code>kwargs.get('max_depth')</code>. Students can now tune the model <b>without editing code</b>.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Triggers — running without clicking</h3>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Trigger type</th><th>When the pipeline runs</th><th>ML use case</th></tr>
+      <tr><td><b>Schedule</b></td><td>At fixed times (hourly, daily, cron)</td><td>Retrain the model every night on fresh data</td></tr>
+      <tr><td><b>Event</b></td><td>When something happens (e.g., a file lands in cloud storage)</td><td>Retrain when a new labelled dataset arrives</td></tr>
+      <tr><td><b>API</b></td><td>When another program calls a URL</td><td>A web app asks for a retrain on demand</td></tr>
+    </table>
+    </div>
+    <p style="margin-bottom:0">To add one: open the pipeline → <b>Triggers</b> → <b>New trigger</b> → choose type → set frequency → <b>Save</b> and switch it on. The <b>Runs</b> page then shows the history of every run, with logs per block.</p>
+  </div>
+
+  <div class="note"><b>Big picture:</b> Load → Prepare → Train → Test → Save, running on a schedule with quality gates, is the core idea of <b>MLOps</b>. Mage gives students that idea with very little setup.</div>
+</section>
+
+<!-- 9 -->
+<section id="exercises">
+  <h2><span class="num">9</span>Student exercises</h2>
+
+  <details><summary>Exercise 1 · Change the model</summary>
+    <p>Replace <code>DecisionTreeClassifier</code> with <code>LogisticRegression(max_iter=200)</code> in <code>train_model</code>. Re-run only that block. Did the accuracy test still pass?</p>
+  </details>
+  <details><summary>Exercise 2 · Break the quality gate</summary>
+    <p>Set the pipeline variable <code>max_depth = 1</code> and run the whole pipeline. Which block fails? Does <code>save_results</code> run? Explain why.</p>
+    <p><i>Expected:</i> accuracy drops to about 0.6, <code>test_accuracy</code> fails, and the exporter is skipped.</p>
+  </details>
+  <details><summary>Exercise 3 · Load from a CSV instead</summary>
+    <p>Download the Iris CSV, put it in the project folder, and change <code>load_iris</code> to use <code>pd.read_csv('iris.csv')</code>. Only one block should change. Why is that a benefit of pipelines?</p>
+  </details>
+  <details><summary>Exercise 4 · Add an evaluation block</summary>
+    <p>Add a new transformer <code>evaluate</code> between <code>train_model</code> and <code>save_results</code> that prints a confusion matrix using <code>pd.crosstab(df['target'], df['predicted'])</code>.</p>
+  </details>
+  <details><summary>Exercise 5 · Schedule it</summary>
+    <p>Create a Schedule trigger that runs the pipeline every hour. After two runs, open the <b>Runs</b> page and compare the logs.</p>
+  </details>
+
+  <h3>Quick check questions</h3>
+  <ol>
+    <li>What are the three main block types, and what does each do?</li>
+    <li>How does the output of <code>prepare_data</code> reach <code>train_model</code>?</li>
+    <li>Why did we put the train/test labels in one DataFrame instead of returning two?</li>
+    <li>What happens to downstream blocks when a <code>@test</code> fails?</li>
+    <li>Give one real situation where an <b>Event</b> trigger is better than a <b>Schedule</b> trigger.</li>
+  </ol>
+</section>
+
+</main>
+
+<footer>Mage + scikit-learn · Iris classification teaching module</footer>
+
+<script>
+  var nodes = ['n0', 'n1', 'n2', 'n3'];
+  var accByDepth = { '1': 0.633, '2': 0.967, '3': 1.0, '5': 1.0 };
+  var running = false;
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function log(text) {
+    var c = document.getElementById('console');
+    if (c.textContent === 'Waiting for run…') c.textContent = '';
+    c.textContent += text + '\n';
+  }
+
+  function reset() {
+    nodes.forEach(function (id) { document.getElementById(id).className = 'sim-node'; });
+    document.getElementById('console').textContent = 'Waiting for run…';
+  }
+
+  async function step(i, lines) {
+    var n = document.getElementById(nodes[i]);
+    n.className = 'sim-node running';
+    await wait(700);
+    lines.forEach(log);
+    n.className = 'sim-node done';
+    await wait(300);
+  }
+
+  async function run() {
+    if (running) return;
+    running = true;
+    document.getElementById('runBtn').disabled = true;
+    reset();
+    var depth = document.getElementById('depth').value;
+    var acc = accByDepth[depth];
+
+    log('Pipeline iris_classifier started (max_depth=' + depth + ')');
+    await step(0, ['[load_iris]     Rows loaded: 150', '[load_iris]     ✓ test_output passed']);
+    await step(1, ['[prepare_data]  Train rows: 120 | Test rows: 30', '[prepare_data]  ✓ test_output passed']);
+
+    var n2 = document.getElementById('n2');
+    n2.className = 'sim-node running';
+    await wait(900);
+    log('[train_model]   max_depth = ' + depth + ' | Test accuracy = ' + acc);
+    if (acc >= 0.8) {
+      log('[train_model]   ✓ test_accuracy passed');
+      n2.className = 'sim-node done';
+      await wait(300);
+      await step(3, ['[save_results]  Saved 30 predictions to iris_predictions.csv']);
+      log('Pipeline run COMPLETED ✔');
+    } else {
+      log('[train_model]   ✗ test_accuracy FAILED: Model accuracy is below 80%');
+      n2.className = 'sim-node';
+      n2.style.borderColor = '#c4432b';
+      n2.style.background = '#fbf0ec';
+      log('[save_results]  skipped (upstream block failed)');
+      log('Pipeline run FAILED ✘');
+    }
+    document.getElementById('runBtn').disabled = false;
+    running = false;
+  }
+
+  document.getElementById('runBtn').addEventListener('click', run);
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    if (running) return;
+    var n2 = document.getElementById('n2');
+    n2.style.borderColor = ''; n2.style.background = '';
+    reset();
+  });
+</script>
+</body>
+</html>
